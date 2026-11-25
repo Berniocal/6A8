@@ -93,7 +93,7 @@ function renameMath(latex,n){
  const t=notation(n);
  const map={a:t.a,b:t.b,c:t.c,c_a:t.p,c_b:t.q,v_c:t.h,'\\alpha':'\\angle '+n.A,'\\beta':'\\angle '+n.B};
  // Match whole TeX commands first, and never replace letters within commands.
- return latex.replace(/\\[a-zA-Z]+|c_a|c_b|v_c|[abc]/g,m=>map[m]??m);
+ return latex.replace(/\\(?:mathrm|text)\{[^{}]*\}|\\[a-zA-Z]+|c_a|c_b|v_c|[abc]/g,m=>map[m]??m);
 }
 function renameMathHtml(html,n){
  return n?html.replace(/\\\(([\s\S]*?)\\\)|\\\[([\s\S]*?)\\\]/g,(m,i,d)=>i!==undefined?math(renameMath(i,n)):('\\['+renameMath(d,n)+'\\]')):html;
