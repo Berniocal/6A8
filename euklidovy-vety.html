@@ -15,7 +15,7 @@ details{margin-top:10px}summary::after{content:'▾'}details[open]>summary::afte
 <header><a class="back" href="index.html">← Matematika 6A8</a><div class="eyebrow" style="margin-top:15px">6A8 · Geometrie</div><h1>Euklidovy věty</h1><p class="header-sub">15 úloh od základních výpočtů až po kombinované slovní úlohy. U každého zadání je samostatně rozbalovací náčrtek a vzorové řešení.</p></header>
 <nav class="controls"><a class="btn topbutton" href="#zaklady">Základní úlohy</a><a class="btn topbutton" href="#slovni">Slovní úlohy</a><button class="btn" id="close">Sbalit vše</button><button class="btn" id="theme">Světlý / tmavý</button><span class="grow"></span><span class="status" id="status">0 / 15 hotovo</span></nav>
 <main class="container"><section class="intro"><strong>Značení v pravoúhlém trojúhelníku ABC</strong><p>Pravý úhel je u vrcholu C, pata výšky na přeponu je P. Přepona je \(c=AB\), odvěsny \(a=BC\), \(b=AC\), výška \(v_c=CP\). Úseky přepony jsou \(c_a=BP\) a \(c_b=AP\).</p><div class="formula"><span>\(a^2=c\,c_a\)</span><span>\(b^2=c\,c_b\)</span><span>\(v_c^2=c_a c_b\)</span><span>\(c=c_a+c_b\)</span></div><p class="note-small">U základních úloh dopočítej všech šest délek, oba ostré úhly a obsah. U výsledků, které nejsou přesné, zaokrouhluj na dvě desetinná místa. Zrcadlové varianty jsou součástí stejného čísla. Ve slovních úlohách použij alespoň jednu Euklidovu větu; podle potřeby přidej Pythagorovu větu nebo goniometrii.</p></section>
-<section id="zaklady"><div class="chapter-head"><div><h2>1. Základní výpočty</h2><p>Všechny typy dvojic zadaných délek.</p></div></div><div class="cards" id="basic"></div></section>
+<section id="zaklady"><div class="chapter-head"><div><h2>1. Základní výpočty</h2><p>Všechny typy dvojic zadaných délek. Od úlohy 5 se mění označení trojúhelníků – přizpůsob mu vzorce.</p></div></div><div class="cards" id="basic"></div></section>
 <section id="slovni"><div class="chapter-head"><div><h2>2. Slovní úlohy</h2><p>Od jednoduché geometrie k více navazujícím výpočtům.</p></div></div><div class="cards" id="word"></div></section></main><footer>6A8 · Euklidovy věty · Samostatné procvičování</footer>
 <script>
 'use strict';
@@ -75,16 +75,41 @@ function solve(g){
  return {d,steps};
 }
 const mirror=g=>Object.fromEntries(Object.entries(g).map(([k,v])=>[({a:'b',b:'a',p:'q',q:'p'})[k]||k,v]));
-function diagram(d,g,unit,caption='',angle=''){
+const names=[
+ null,null,null,null,
+ {A:'K',B:'M',C:'L',P:'N',name:'KLM'},
+ {A:'S',B:'T',C:'R',P:'H',name:'RST'},
+ {A:'X',B:'Y',C:'Z',P:'Q',name:'XYZ'},
+ {A:'D',B:'F',C:'E',P:'J',name:'DEF'},
+ {A:'V',B:'W',C:'U',P:'O',name:'UVW'}
+];
+function notation(n){
+ if(!n)return T;
+ const a=n.A.toLowerCase(),b=n.B.toLowerCase(),c=n.C.toLowerCase();
+ return {a,b,c,p:c+'_'+a,q:c+'_'+b,h:'v_'+c};
+}
+function renameMath(latex,n){
+ if(!n)return latex;
+ const t=notation(n);
+ const map={a:t.a,b:t.b,c:t.c,c_a:t.p,c_b:t.q,v_c:t.h,'\\alpha':'\\angle '+n.A,'\\beta':'\\angle '+n.B};
+ // Match whole TeX commands first, and never replace letters within commands.
+ return latex.replace(/\\[a-zA-Z]+|c_a|c_b|v_c|[abc]/g,m=>map[m]??m);
+}
+function renameMathHtml(html,n){
+ return n?html.replace(/\\\(([\s\S]*?)\\\)|\\\[([\s\S]*?)\\\]/g,(m,i,d)=>i!==undefined?math(renameMath(i,n)):('\\['+renameMath(d,n)+'\\]')):html;
+}
+function diagram(d,g,unit,caption='',angle='',n=null){
  const scale=Math.min(440/d.c,190/d.h),A=[(600-d.c*scale)/2,245],B=[A[0]+d.c*scale,245],P=[A[0]+d.q*scale,245],C=[P[0],245-d.h*scale];
  const pt=p=>p.join(',');
  const path=(u,v,cl='geom')=>'<path class="'+cl+'" d="M'+pt(u)+' L'+pt(v)+'"/>';
  const mark=(v,u,w,r)=>{const norm=p=>{let x=p[0]-v[0],y=p[1]-v[1],l=Math.hypot(x,y);return [x/l,y/l]};let x=norm(u),y=norm(w),m=[v[0]+r*x[0],v[1]+r*x[1]],n=[v[0]+r*y[0],v[1]+r*y[1]],o=[v[0]+.45*r*(x[0]+y[0]),v[1]+.45*r*(x[1]+y[1])];return '<path class="smallmark" d="M'+pt(m)+' A'+r+','+r+' 0 0 '+(x[0]*y[1]-x[1]*y[0]>0?1:0)+' '+pt(n)+'"/><circle cx="'+o[0]+'" cy="'+o[1]+'" r="2" fill="var(--svgstroke)"/>';};
  const txt=(x,y,s,k='',align='middle')=>'<text x="'+x+'" y="'+y+'" text-anchor="'+align+'" class="'+k+'">'+s+'</text>';
- const labels={a:'a',b:'b',c:'c',p:'cₐ',q:'cᵦ',h:'v꜀'};
+ const nt=notation(n);
+ const labels=Object.fromEntries(Object.entries(nt).map(([k,v])=>[k,v.replace(/_([a-z])/g,'<tspan baseline-shift="sub" font-size="70%">$1</tspan>')]));
+ const vertices=n||{A:'A',B:'B',C:'C',P:'P'};
  const label=(k)=>labels[k]+(g[k]!==undefined?' = '+fmt(g[k])+' '+unit:'');
  const lab=(k,u,v,dx,dy)=>txt((u[0]+v[0])/2+dx,(u[1]+v[1])/2+dy,label(k),g[k]!==undefined?'known':'');
- return '<figure class="diagram"><svg viewBox="0 0 600 320" role="img" aria-label="Pravoúhlý trojúhelník s výškou na přeponu">'+path(A,B)+path(B,C)+path(C,A)+path(C,P,'geom alt')+mark(C,A,B,20)+mark(P,C,B,15)+txt(A[0]-13,A[1]+6,'A')+txt(B[0]+13,B[1]+6,'B')+txt(C[0],C[1]-13,'C')+txt(P[0],P[1]+20,'P')+lab('b',A,C,-26,-10)+lab('a',B,C,26,-10)+lab('h',C,P,13,-5)+lab('q',A,P,0,26)+lab('p',P,B,0,26)+lab('c',A,B,0,57)+(angle?txt(A[0]+24,A[1]-15,angle,'known','start'):'')+'</svg><figcaption>'+(caption||'Zadané délky jsou zvýrazněné; neznámé zůstávají označené písmeny.')+'</figcaption></figure>';
+ return '<figure class="diagram"><svg viewBox="0 0 600 320" role="img" aria-label="Pravoúhlý trojúhelník s výškou na přeponu">'+path(A,B)+path(B,C)+path(C,A)+path(C,P,'geom alt')+mark(C,A,B,20)+mark(P,C,B,15)+txt(A[0]-13,A[1]+6,vertices.A)+txt(B[0]+13,B[1]+6,vertices.B)+txt(C[0],C[1]-13,vertices.C)+txt(P[0],P[1]+20,vertices.P)+lab('b',A,C,-26,-10)+lab('a',B,C,26,-10)+lab('h',C,P,13,-5)+lab('q',A,P,0,26)+lab('p',P,B,0,26)+lab('c',A,B,0,57)+(angle?txt(A[0]+24,A[1]-15,angle,'known','start'):'')+'</svg><figcaption>'+(caption||'Zadané délky jsou zvýrazněné; neznámé zůstávají označené písmeny.')+'</figcaption></figure>';
 }
 function stephtml(steps){return steps.map(t=>'<p>'+t.reason+'</p>'+line(t.s)).join('')}
 function angles(d){let A=Math.atan2(d.a,d.b)*180/Math.PI;return {A,B:90-A,S:d.a*d.b/2}}
@@ -96,9 +121,9 @@ function results(d,u,all=true){
 function complete(d,u){let {A,B,S}=angles(d);return '<p>Ostré úhly vypočteme z poměru odvěsen; obsah z odvěsen.</p>'+line('\\alpha=\\arctan\\frac{a}{b}'+eq(A)+f(A)+'^\\circ\\qquad\\beta=90^\\circ-\\alpha'+eq(B)+f(B)+'^\\circ')+line('S=\\frac{ab}{2}'+eq(S)+f(S)+'\\,\\mathrm{'+u+'}^2');}
 function given(g,u){return Object.entries(g).map(([k,v])=>math(T[k]+'='+f(v)+'\\,\\mathrm{'+u+'}')).join(', ');}
 function details(title,body){return '<details><summary>'+title+'</summary><div class="answer">'+body+'</div></details>';}
-function variant(g,tag=''){let s=solve(g);return (tag?'<h4>'+tag+'</h4>':'')+'<p class="lead">Je dáno '+given(g,'cm')+'. Dopočítej zbývající délky, ostré úhly a obsah.</p>'+details('Náčrtek',diagram(s.d,g,'cm'))+details('Postup řešení',stephtml(s.steps)+complete(s.d,'cm')+results(s.d,'cm')+(g.c&&g.h?'<p>Existuje také zrcadlové řešení: '+math('c_a=16\\,\\mathrm{cm},\\ c_b=4\\,\\mathrm{cm}')+'. Odvěsny a ostré úhly se prohodí; výška, přepona a obsah zůstávají stejné.</p>':''));}
+function variant(g,tag='',n=null){let s=solve(g);return (tag?'<h4>'+tag+'</h4>':'')+'<p class="lead">V pravoúhlém trojúhelníku '+(n?n.name:'ABC')+' s pravým úhlem u vrcholu '+(n?n.C:'C')+' je dáno '+renameMathHtml(given(g,'cm'),n)+'. Dopočítej zbývající délky, ostré úhly a obsah.</p>'+details('Náčrtek',diagram(s.d,g,'cm','','',n))+details('Postup řešení',renameMathHtml(stephtml(s.steps)+complete(s.d,'cm')+results(s.d,'cm'),n)+(g.c&&g.h?'<p>Existuje také zrcadlové řešení: '+math('c_a=16\\,\\mathrm{cm},\\ c_b=4\\,\\mathrm{cm}')+'. Odvěsny a ostré úhly se prohodí; výška, přepona a obsah zůstávají stejné.</p>':''));}
 function card(n,title,body){return '<article class="card"><div class="card-top"><span class="num">'+n+'</span><div><div class="cat">'+(n<=9?'ZÁKLADNÍ ÚLOHA':'SLOVNÍ ÚLOHA')+'</div><h3>'+title+'</h3></div></div>'+body+'<div class="card-foot" style="margin-top:12px"><label class="done-label"><input type="checkbox" class="done" data-id="'+n+'"><span>Hotovo</span></label></div></article>'}
-$('basic').innerHTML=basic.map((x,i)=>card(i+1,x.title,variant(x.given,x.mirror?'Varianta a)':'')+(x.mirror?'<div class="variant">'+variant(mirror(x.given),'Varianta b)')+'</div>':''))).join('');
+$('basic').innerHTML=basic.map((x,i)=>card(i+1,x.title,variant(x.given,x.mirror?'Varianta a)':'',names[i])+(x.mirror?'<div class="variant">'+variant(mirror(x.given),'Varianta b)',names[i])+'</div>':''))).join('');
 const words=[
  {title:'Výztuha trojúhelníkového panelu',text:'Truhlář vyrábí pravoúhlý trojúhelníkový panel. Na jeho nejdelší hranu chce z protějšího vrcholu připevnit kolmou výztuhu. Místo upevnění rozděluje nejdelší hranu na části dlouhé 45 cm a 80 cm. Jak dlouhá musí být výztuha a jak dlouhé jsou obě zbývající hrany panelu?',g:{p:45,q:80},u:'cm',caption:'AB je nejdelší hrana panelu, CP je kolmá výztuha.',after:d=>'<p>Výztuha má délku <strong>'+fmt(d.h)+' cm</strong>, odvěsny '+fmt(d.a)+' cm a '+fmt(d.b)+' cm.</p>'},
  {title:'Podpěra žebříku',text:'Třímetrový žebřík je opřený o svislou stěnu. Jeho dolní konec je vzdálen 1,8 m od stěny. Z místa, kde se stěna stýká s podlahou, vede kolmá podpěra k žebříku. Urči délku podpěry, výšku horního konce žebříku nad podlahou a vzdálenost místa upevnění podpěry od dolního konce žebříku.',g:{c:3,a:1.8},u:'m',caption:'AC je stěna, BC je podlaha (dolní konec žebříku B).',after:d=>'<p>Podpěra měří <strong>'+fmt(d.h)+' m</strong>, horní konec je ve výšce '+fmt(d.b)+' m a bod upevnění je '+fmt(d.p)+' m od dolního konce.</p>'},
